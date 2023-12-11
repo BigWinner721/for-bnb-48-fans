@@ -18,12 +18,12 @@ async function readCSV(filePath) {
 }
 
 async function findDuplicates() {
-    const hashs = await readCSV('received_hashs.csv');
-    const ahashs = await readCSV('owned_hashs.csv');
+    const hashs = await readCSV('output/received_hashs.csv');
+    const ahashs = await readCSV('output/owned_hashs.csv');
 
     const duplicates = [...hashs].filter(hash => ahashs.has(hash));
 
-    fs.writeFileSync('real_owned_hashs.csv', duplicates.join('\n'));
+    fs.writeFileSync('output/real_owned_hashs.csv', duplicates.join('\n'));
     console.log('Duplicates saved to nhahs.csv');
 }
 

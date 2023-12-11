@@ -14,7 +14,7 @@ function randomDelay(min = 100, max = 1000) {
             defaultViewport: { width: 3000, height: 2000 } // 设置浏览器窗口尺寸
         });
         const page = await browser.newPage();
-        await page.goto('https://dune.com/queries/3271386/5475821', { waitUntil: 'networkidle2' });
+        await page.goto('https://dune.com/queries/3269353/5472487', { waitUntil: 'networkidle2' });
         console.log("页面加载完成");
 
         await page.waitForTimeout(15000); // 等待页面加载
@@ -55,7 +55,7 @@ function randomDelay(min = 100, max = 1000) {
             }
         }
 
-        fs.writeFileSync(path.join(__dirname, 'received_hashs.csv'), allData.join('\n'));
+        fs.writeFileSync(path.join(__dirname, 'output/received_hashs.csv'), allData.join('\n'));
         console.log("数据已保存到 CSV 文件");
 
         await browser.close();
