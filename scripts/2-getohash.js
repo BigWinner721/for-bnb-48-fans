@@ -22,10 +22,10 @@ async function autoScroll(page){
 
 (async () => {
     const browser = await puppeteer.launch({
-        headless: "new" // 使用新的无头模式
+        headless: "new" 
     });
     const page = await browser.newPage();
-    await page.goto('https://evm.ink/address/0x39cAa8179A80465DCa62CbF10A87E31D6f5ca4Dc?currentTab=inscriptions', {waitUntil: 'networkidle2'});
+    await page.goto('https://evm.ink/address/0xf91d210598dcdad7407a80e4a39d5304eab11776?currentTab=inscriptions', {waitUntil: 'networkidle2'});
 
     await autoScroll(page);
 
@@ -40,7 +40,7 @@ async function autoScroll(page){
 
     console.log(hashes);
 
-    fs.writeFileSync('hashs.csv', hashes.join('\n'));
+    fs.writeFileSync('owned_hashs.csv', hashes.join('\n'));
 
     await browser.close();
 })();
