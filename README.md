@@ -6,6 +6,7 @@
     //查一个地址 有效mint的hash   https://dune.com/queries/3269353/5472487
     //查一个mint出来的铭文是否被双花&假发送 https://dune.com/queries/3269503/5472738
     //查一次bnb-48-fans转账后的真货（有一定条件 ）https://dune.com/queries/3270571/5474434
+    //我实际想用dune直接查持仓，计算量超过两分钟就失败了，不知道充钱用户会不会更好 ？
 
 ## scripts
 
