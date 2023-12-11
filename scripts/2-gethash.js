@@ -21,23 +21,26 @@ async function autoScroll(page){
 }
 
 (async () => {
-    const browser = await puppeteer.launch();
+    const browser = await puppeteer.launch({
+        headless: "new" // 使用新的无头模式
+    });
     const page = await browser.newPage();
     await page.goto('https://evm.ink/address/0x39cAa8179A80465DCa62CbF10A87E31D6f5ca4Dc?currentTab=inscriptions', {waitUntil: 'networkidle2'});
 
     await autoScroll(page);
 
-    const addresses = await page.evaluate(() => {
-        const links = Array.from(document.querySelectorAll('a[href^="/marketplace/"]'));
+    const hashes = await page.evaluate(() => {
+        const links = Array.from(document.querySelectorAll('a[href^="/marketplace/eip155:56/"]'));
         return links.map(link => {
             const href = link.getAttribute('href');
-            const parts = href.split('/');
-            return parts[parts.length - 1];
-        });
+            const match = href.match(/\/marketplace\/eip155:56\/(.*?):/);
+            return match ? match[1] : null;
+        }).filter(hash => hash !== null);
     });
 
-    // 将地址保存到 CSV 文件
-    fs.writeFileSync('hashs.csv', addresses.join('\n'));
+    console.log(hashes);
+
+    fs.writeFileSync('hashs.csv', hashes.join('\n'));
 
     await browser.close();
 })();
