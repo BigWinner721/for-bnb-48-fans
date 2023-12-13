@@ -2,56 +2,61 @@ const puppeteer = require('puppeteer');
 const fs = require('fs');
 const path = require('path');
 
-async function autoScroll(page) {
-    await page.evaluate(async () => {
-        await new Promise((resolve, reject) => {
-            var totalHeight = 0;
-            var distance = 100;
-            var timer = setInterval(() => {
-                var scrollHeight = document.body.scrollHeight;
-                window.scrollBy(0, distance);
-                totalHeight += distance;
-
-                if (totalHeight >= scrollHeight) {
-                    clearInterval(timer);
-                    resolve();
-                }
-            }, 200);
-        });
-    });
+async function autoScroll(page, expectedRows) {
+    let currentRows = 0;
+    while (currentRows < expectedRows) {
+        await page.evaluate('window.scrollTo(0, document.body.scrollHeight)');
+        await page.waitForTimeout(5000); // 增加等待时间
+        currentRows = await page.evaluate(() => document.querySelectorAll('a[href^="/marketplace/eip155:56/"]').length / 3);
+        console.log(`当前行数: ${currentRows}, 预期行数: ${expectedRows}`);
+    }
 }
 
 (async () => {
-    const browser = await puppeteer.launch({
-        headless: false, // 使用非无头模式以便观察浏览器行为
-        defaultViewport: { width: 1920, height: 1080 },
-        timeout: 600000 // 增加启动超时时间
-    });
-    const page = await browser.newPage();
-    await page.goto('https://evm.ink/address/0x349503CcA8867C8e5c75e9D8C17b7DBe0eF13D76?currentTab=inscriptions', { waitUntil: 'networkidle2' });
+    try {
+        const browser = await puppeteer.launch({
+            headless: false,
+            defaultViewport: { width: 1920, height: 1080 },
+            args: ['--no-sandbox', '--disable-setuid-sandbox'],
+            timeout: 600000
+        });
+        const page = await browser.newPage();
+        await page.goto('https://evm.ink/address/0x198286504B9e946081f098563ed53Bd461B75B8C?currentTab=inscriptions', { waitUntil: 'networkidle2' });
 
-    await page.waitForSelector('a[href^="/marketplace/eip155:56/"]', { timeout: 600000 });
-    await autoScroll(page);
-    await page.waitForTimeout(10000);
+        console.log('页面已加载，等待选择器');
+        await page.waitForSelector('a[href^="/marketplace/eip155:56/"]', { timeout: 600000 });
+        console.log('选择器可用，开始滚动');
 
-    const stream = fs.createWriteStream(path.join(__dirname, 'output/owned_hashs.csv'), { flags: 'a' });
+        const expectedRows = await page.evaluate(() => {
+            const header = document.querySelector('h1.text-4xl.font-bold');
+            return header ? Math.ceil(parseInt(header.textContent.match(/\((\d+)\)/)[1]) / 3) : 0;
+        });
+        console.log(`预期行数: ${expectedRows}`);
 
-    const hashes = await page.evaluate(() => {
-        const links = Array.from(document.querySelectorAll('a[href^="/marketplace/eip155:56/"]'));
-        return links.map(link => {
-            const href = link.getAttribute('href');
-            const match = href.match(/\/marketplace\/eip155:56\/(.*?):/);
-            return match ? match[1] : null;
-        }).filter(hash => hash !== null);
-    });
+        await autoScroll(page, expectedRows);
+        console.log('滚动完成，开始收集数据');
 
-    // 逐行写入文件
-    hashes.forEach(hash => {
-        stream.write(hash + '\n');
-    });
+        const stream = fs.createWriteStream(path.join(__dirname, 'output/owned_hashs.csv'), { flags: 'a' });
 
-    stream.end();
-    console.log('数据已保存到 CSV 文件');
+        const hashes = await page.evaluate(() => {
+            const links = Array.from(document.querySelectorAll('a[href^="/marketplace/eip155:56/"]'));
+            return links.map(link => {
+                const href = link.getAttribute('href');
+                const match = href.match(/\/marketplace\/eip155:56\/(.*?):/);
+                return match ? match[1] : null;
+            }).filter(hash => hash !== null);
+        });
 
-    await browser.close();
+        console.log('数据收集完成，开始写入文件');
+        hashes.forEach(hash => {
+            stream.write(hash + '\n');
+        });
+
+        stream.end();
+        console.log('数据已保存到 CSV 文件');
+
+        await browser.close();
+    } catch (error) {
+        console.error('脚本运行过程中发生错误:', error);
+    }
 })();
